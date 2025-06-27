@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Domaine des Coteaux de Loire - Histoire Interactive</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .scene-transition {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .choice-button {
+            transition: all 0.3s ease;
+        }
+        .choice-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-green-50 to-yellow-50 min-h-screen">
+    <div id="app" class="max-w-2xl mx-auto p-6">
+        <!-- Loading message -->
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+            <p class="mt-2 text-gray-600">Chargement de l'histoire...</p>
+        </div>
+    </div>
+
+    <script>
+        // État de l'application
+        let currentScene = 'start';
+        let discoveries = [];
+        
+        // Données des scènes
+        const scenes = {
+            start: {
+                title: "Bienvenue au Domaine des Coteaux de Loire",
+                content: "Vous arrivez dans un magnifique domaine viticole au cœur de la vallée de la Loire. Les vignes s'étendent à perte de vue, et l'air embaume le raisin mûr. Un panneau indique : 'Domaine familial - Spécialité Chenin depuis 1892'.",
+                image: "🍇",
+                choices: [
+                    { text: "Entrer par la cave", scene: 'cave' },
+                    { text: "Aller voir les vignes", scene: 'vignes' },
+                    { text: "Se présenter à l'accueil", scene: 'accueil' }
+                ]
+            },
+            
+            accueil: {
+                title: "Rencontre avec Marie, la vigneronne",
+                content: "Marie, la propriétaire du domaine, vous accueille avec un sourire chaleureux. 'Bonjour ! Je suis Marie, troisième génération à travailler ce terroir. Le chenin, c'est ma passion ! Il exprime ici toute la minéralité de nos sols de tuffeau.'",
+                image: "👩‍🌾",
+                choices: [
+                    { text: "Demander l'histoire du domaine", scene: 'histoire', discovery: "Histoire familiale" },
+                    { text: "Découvrir le chenin", scene: 'chenin', discovery: "Cépage chenin" },
+                    { text: "Visiter les installations", scene: 'cave' }
+                ]
+            },
+
+            vignes: {
+                title: "Dans les vignes avec Pierre, le chef de culture",
+                content: "Pierre, un homme passionné aux mains tachées de terre, vous explique : 'Regardez ces feuilles ! Le chenin aime notre climat frais. Ici, on vendange tard pour avoir cette belle acidité qui fait la réputation de nos vins.'",
+                image: "🍃",
+                choices: [
+                    { text: "Apprendre sur le terroir", scene: 'terroir', discovery: "Terroir de tuffeau" },
+                    { text: "Comprendre la vendange", scene: 'vendange', discovery: "Vendange tardive" },
+                    { text: "Retourner au domaine", scene: 'accueil' }
+                ]
+            },
+
+            cave: {
+                title: "Les chais avec Thomas, le maître de chai",
+                content: "Thomas, jeune œnologue passionné, vous guide dans les chais. 'Le chenin, c'est un cépage noble mais capricieux. Regardez ces cuves : on vinifie en douceur pour préserver ses arômes de fruits blancs et cette minéralité si particulière.'",
+                image: "🍷",
+                choices: [
+                    { text: "Découvrir la vinification", scene: 'vinification', discovery: "Vinification douce" },
+                    { text: "Déguster le vin", scene: 'degustation' },
+                    { text: "Voir les barriques", scene: 'elevage', discovery: "Élevage en fûts" }
+                ]
+            },
+
+            histoire: {
+                title: "L'histoire du domaine",
+                content: "Marie vous raconte : 'Mon arrière-grand-père a planté les premières vignes en 1892. À l'époque, le chenin était moins reconnu qu'aujourd'hui. Mais il a cru en ce cépage et en notre terroir. Aujourd'hui, nous sommes fiers de perpétuer cette tradition familiale.'",
+                image: "📚",
+                choices: [
+                    { text: "Découvrir les vignes", scene: 'vignes' },
+                    { text: "Visiter la cave", scene: 'cave' },
+                    { text: "En savoir plus sur le chenin", scene: 'chenin' }
+                ]
+            },
+
+            chenin: {
+                title: "Le chenin, cépage noble de Loire",
+                content: "Marie explique avec passion : 'Le chenin blanc est extraordinaire ! Il peut donner des vins secs, demi-secs, moelleux ou même effervescents. Ici, on privilégie les vins secs qui expriment la minéralité de notre tuffeau. Une acidité remarquable et une capacité de garde exceptionnelle !'",
+                image: "🍇",
+                choices: [
+                    { text: "Voir comment on le cultive", scene: 'vignes' },
+                    { text: "Comprendre la vinification", scene: 'cave' },
+                    { text: "Passer à la dégustation", scene: 'degustation' }
+                ]
+            },
+
+            terroir: {
+                title: "Le terroir de tuffeau",
+                content: "Pierre vous fait toucher la terre : 'Sentez cette pierre blanche ? C'est le tuffeau, une roche calcaire tendre. Elle retient l'eau l'été et draine l'hiver. Les racines de nos chenins plongent profond dans cette roche. C'est elle qui donne cette minéralité unique à nos vins.'",
+                image: "🪨",
+                choices: [
+                    { text: "Voir les techniques de culture", scene: 'vendange' },
+                    { text: "Retourner voir Marie", scene: 'accueil' },
+                    { text: "Aller en cave", scene: 'cave' }
+                ]
+            },
+
+            vendange: {
+                title: "Les vendanges tardives",
+                content: "Pierre explique : 'On vendange fin septembre, parfois début octobre. Plus tard que nos voisins ! Mais c'est le secret : le chenin a besoin de cette maturation lente. Les nuits fraîches préservent l'acidité, les journées ensoleillées concentrent les arômes.'",
+                image: "🧺",
+                choices: [
+                    { text: "Comprendre la vinification", scene: 'cave' },
+                    { text: "Découvrir le terroir", scene: 'terroir' },
+                    { text: "Rencontrer Marie", scene: 'accueil' }
+                ]
+            },
+
+            vinification: {
+                title: "La vinification douce",
+                content: "Thomas vous montre ses cuves : 'Pas de secret, que de la patience ! Pressurage doux, fermentation lente à température contrôlée. On respecte le fruit. Voyez ces cuves inox ? Elles préservent la fraîcheur. Certaines cuvées passent en barriques pour plus de complexité.'",
+                image: "🏭",
+                choices: [
+                    { text: "Voir l'élevage en barriques", scene: 'elevage' },
+                    { text: "Passer à la dégustation", scene: 'degustation' },
+                    { text: "Retourner aux vignes", scene: 'vignes' }
+                ]
+            },
+
+            elevage: {
+                title: "L'élevage en fûts",
+                content: "Thomas caresse une barrique : 'Nos chenins de garde passent 8 mois en fûts de chêne français. Pas pour le goût boisé, mais pour l'oxygénation lente. Le vin gagne en complexité, en texture. C'est un mariage délicat entre le fruit et le bois.'",
+                image: "🛢️",
+                choices: [
+                    { text: "Comprendre la vinification", scene: 'vinification' },
+                    { text: "Goûter le résultat", scene: 'degustation' },
+                    { text: "Revoir l'histoire du domaine", scene: 'histoire' }
+                ]
+            },
+
+            degustation: {
+                title: "Dégustation finale",
+                content: `Félicitations ! Vous avez découvert ${discoveries.length} secrets du domaine. Marie vous propose une dégustation de leur chenin : "Sentez ces arômes de poire et de miel, cette minéralité... Regardez cette robe dorée ! C'est tout notre terroir dans ce verre. Merci de votre visite !"`,
+                image: "🥂",
+                choices: [
+                    { text: "Voir mes découvertes", scene: 'recap' },
+                    { text: "Recommencer l'aventure", scene: 'restart' }
+                ]
+            },
+
+            recap: {
+                title: "Vos découvertes au domaine",
+                content: "Voici tout ce que vous avez appris lors de votre visite du domaine :",
+                image: "📋",
+                choices: [
+                    { text: "Recommencer l'aventure", scene: 'restart' },
+                    { text: "Retourner à la dégustation", scene: 'degustation' }
+                ]
+            }
+        };
+
+        // Fonctions
+        function addDiscovery(discovery) {
+            if (!discoveries.includes(discovery)) {
+                discoveries.push(discovery);
+            }
+        }
+
+        function goToScene(sceneName, discovery = null) {
+            if (discovery) {
+                addDiscovery(discovery);
+            }
+            
+            if (sceneName === 'restart') {
+                discoveries = [];
+                currentScene = 'start';
+            } else {
+                currentScene = sceneName;
+            }
+            
+            render();
+        }
+
+        function render() {
+            const scene = scenes[currentScene];
+            if (!scene) {
+                console.error('Scène non trouvée:', currentScene);
+                return;
+            }
+
+            const app = document.getElementById('app');
+            
+            app.innerHTML = `
+                <div class="scene-transition bg-white rounded-lg shadow-lg overflow-hidden">
+                    <!-- Header -->
+                    <div class="bg-gradient-to-r from-green-600 to-green-700 text-white p-6 text-center">
+                        <div class="flex items-center justify-center gap-2 mb-2">
+                            <span class="text-2xl">🍷</span>
+                            <h1 class="text-2xl font-bold">Domaine des Coteaux de Loire</h1>
+                        </div>
+                        <div class="flex items-center justify-center gap-4 text-sm opacity-90">
+                            <div class="flex items-center gap-1">
+                                <span>📍</span>
+                                <span>Vallée de la Loire</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <span>🍇</span>
+                                <span>Chenin Blanc</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Scene Content -->
+                    <div class="p-6">
+                        <!-- Scene Header -->
+                        <div class="text-center mb-6">
+                            <div class="text-6xl mb-3">${scene.image}</div>
+                            <h2 class="text-2xl font-bold text-gray-800">${scene.title}</h2>
+                        </div>
+
+                        <!-- Scene Text -->
+                        <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                            <p class="text-gray-700 leading-relaxed">${scene.content}</p>
+                        </div>
+
+                        <!-- Discoveries for recap scene -->
+                        ${currentScene === 'recap' ? `
+                            <div class="mb-6">
+                                <h3 class="font-semibold text-gray-800 mb-3">🎯 Vos découvertes :</h3>
+                                ${discoveries.length > 0 ? `
+                                    <ul class="space-y-2">
+                                        ${discoveries.map(discovery => `
+                                            <li class="flex items-center gap-2 text-green-700">
+                                                <span class="text-green-500 font-bold">✓</span>
+                                                <span>${discovery}</span>
+                                            </li>
+                                        `).join('')}
+                                    </ul>
+                                ` : `
+                                    <p class="text-gray-500 italic">Aucune découverte pour cette visite.</p>
+                                `}
+                            </div>
+                        ` : ''}
+
+                        <!-- Choices -->
+                        <div class="space-y-3">
+                            ${scene.choices.map((choice, index) => `
+                                <button 
+                                    onclick="goToScene('${choice.scene}'${choice.discovery ? `, '${choice.discovery}'` : ''})"
+                                    class="choice-button w-full text-left p-4 bg-green-100 hover:bg-green-200 rounded-lg border border-green-200 text-gray-800 font-medium"
+                                >
+                                    ${choice.discovery ? '🔍 ' : ''}${choice.text}
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    ${discoveries.length > 0 ? `
+                        <div class="bg-gray-50 border-t p-4">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-green-600">👥</span>
+                                <span class="text-sm font-medium text-gray-700">Découvertes : ${discoveries.length}</span>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                ${discoveries.map(discovery => `
+                                    <span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full border border-green-200">
+                                        ${discovery}
+                                    </span>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        // Démarrage de l'application
+        document.addEventListener('DOMContentLoaded', function() {
+            render();
+        });
+    </script>
+</body>
+</html>
